@@ -29,6 +29,7 @@ rxl:
 	cargo build --manifest-path=rxl/Cargo.toml --release
 
 clean:
+	cargo clean --manifest-path=rxl/Cargo.toml
 	rm -f dwm ${OBJ} dwm-${VERSION}.tar.gz
 
 dist: clean

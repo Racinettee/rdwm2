@@ -2,6 +2,9 @@ use libc::{waitpid, WNOHANG};
 use x11::xlib::{Display, XErrorEvent, BadWindow, BadMatch, BadDrawable, BadAccess, XDefaultRootWindow, SubstructureRedirectMask, XSync};
 
 mod xconst;
+mod drw;
+
+pub use drw::*;
 
 static mut XERRORXLIB: Option<unsafe extern "C" fn(*mut Display, *mut XErrorEvent) -> i32> = None;
 #[no_mangle]
