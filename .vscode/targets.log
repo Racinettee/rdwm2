@@ -1,0 +1,442 @@
+make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+# GNU Make 4.3
+# Built for x86_64-redhat-linux-gnu
+# Copyright (C) 1988-2020 Free Software Foundation, Inc.
+# License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+# This is free software: you are free to change and redistribute it.
+# There is NO WARRANTY, to the extent permitted by law.
+
+# Make data base, printed on Sun Jul 17 12:25:57 2022
+
+# Variables
+
+# makefile (from 'Makefile', line 7)
+OBJ = ${SRC:.c=.o}
+# environment
+GDK_BACKEND = x11
+# environment
+LC_ALL = C
+# environment
+NO_AT_BRIDGE = 1
+# makefile (from 'Makefile', line 6)
+SRC = drw.c dwm.c util.c
+# makefile (from 'config.mk', line 19)
+FREETYPEINC = /usr/include/freetype2
+# environment
+GJS_DEBUG_OUTPUT = stderr
+# environment
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-040a0946-a67b-4491-b629-18dfdce6e6b5.sock
+# environment
+VSCODE_CWD = /home/racket
+# makefile (from 'config.mk', line 25)
+LIBS = -L${X11LIB} -lX11 ${XINERAMALIBS} ${FREETYPELIBS}
+# environment
+GDM_LANG = en_CA.UTF-8
+# default
+MAKE_COMMAND := make
+# environment
+define BASH_FUNC_which%%
+() {  ( alias;
+ eval ${which_declare} ) | /usr/bin/which --tty-only --read-alias --read-functions --show-tilde --show-dot $@
+}
+endef
+# automatic
+@D = $(patsubst %/,%,$(dir $@))
+# environment
+VSCODE_HANDLES_UNCAUGHT_ERRORS = true
+# default
+.VARIABLES := 
+# environment
+PWD = /home/racket/Projects/dwm-6.3
+# automatic
+%D = $(patsubst %/,%,$(dir $%))
+# environment
+HOSTNAME = fedora
+# environment
+MAIL = /var/spool/mail/racket
+# environment
+STEAM_FRAME_FORCE_CLOSE = 1
+# environment
+XDG_DATA_DIRS = /home/racket/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share/:/usr/share/
+# automatic
+^D = $(patsubst %/,%,$(dir $^))
+# environment
+VSCODE_LOG_STACK = false
+# automatic
+%F = $(notdir $%)
+# makefile (from 'config.mk', line 18)
+FREETYPELIBS = -lfontconfig -lXft
+# environment
+VSCODE_CODE_CACHE_PATH = /home/racket/.config/Code/CachedData/c3511e6c69bb39013c4a4b7b9566ec1ca73fc4d5
+# environment
+LANG = C
+# environment
+XAUTHORITY = /run/user/1000/.mutter-Xwaylandauth.6BOPP1
+# default
+.LOADED := 
+# default
+.INCLUDE_DIRS = /usr/include /usr/local/include /usr/include
+# makefile
+MAKEFLAGS = pqrR
+# makefile
+CURDIR := /home/racket/Projects/dwm-6.3
+# environment
+VSCODE_PIPE_LOGGING = true
+# environment
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
+# environment
+LESSOPEN = ||/usr/bin/lesspipe.sh %s
+# automatic
+*D = $(patsubst %/,%,$(dir $*))
+# makefile (from 'config.mk', line 2)
+VERSION = 6.3
+# environment
+MFLAGS = -pqrR
+# environment
+SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
+# default
+.SHELLFLAGS := -c
+# environment
+WAYLAND_DISPLAY = wayland-0
+# environment
+HISTSIZE = 1000
+# automatic
++D = $(patsubst %/,%,$(dir $+))
+# environment
+XDG_SESSION_DESKTOP = gnome
+# makefile (from 'config.mk', line 1)
+MAKEFILE_LIST := Makefile config.mk
+# automatic
+@F = $(notdir $@)
+# environment
+VSCODE_VERBOSE_LOGGING = true
+# environment
+VSCODE_PID = 5531
+# environment
+SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS = 0
+# environment
+XDG_SESSION_TYPE = wayland
+# automatic
+?D = $(patsubst %/,%,$(dir $?))
+# environment
+SESSION_MANAGER = local/unix:@/tmp/.ICE-unix/1612,unix/unix:/tmp/.ICE-unix/1612
+# automatic
+*F = $(notdir $*)
+# environment
+CHROME_DESKTOP = code-url-handler.desktop
+# environment
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
+# automatic
+<D = $(patsubst %/,%,$(dir $<))
+# environment
+VSCODE_NLS_CONFIG = {"locale":"en-gb","availableLanguages":{},"_languagePackSupport":true}
+# default
+MAKE_HOST := x86_64-redhat-linux-gnu
+# makefile
+SHELL = /bin/sh
+# default
+MAKECMDGOALS := all
+# environment
+XMODIFIERS = @im=ibus
+# environment
+GJS_DEBUG_TOPICS = JS ERROR;JS LOG
+# environment
+SHLVL = 0
+# environment
+MAKELEVEL := 0
+# default
+MAKE = $(MAKE_COMMAND)
+# environment
+PATH = /home/racket/.cargo/bin:/home/racket/.local/bin:/home/racket/bin:/usr/lib64/ccache:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin
+# environment
+MOZ_GMP_PATH = /usr/lib64/mozilla/plugins/gmp-gmpopenh264/system-installed
+# default
+MAKEFILES := 
+# automatic
+^F = $(notdir $^)
+# makefile (from 'config.mk', line 15)
+XINERAMAFLAGS = -DXINERAMA
+# makefile (from 'config.mk', line 7)
+PREFIX = /usr/local
+# environment
+INVOCATION_ID = 839716ef8548477f8fe2a402a966956b
+# makefile (from 'config.mk', line 24)
+INCS = -I${X11INC} -I${FREETYPEINC}
+# environment
+VSCODE_LOG_NATIVE = false
+# environment
+USERNAME = racket
+# environment
+GNOME_SETUP_DISPLAY = :1
+# automatic
+?F = $(notdir $?)
+# environment
+XDG_CURRENT_DESKTOP = GNOME
+# automatic
++F = $(notdir $+)
+# environment
+DESKTOP_SESSION = gnome
+# environment
+ORIGINAL_XDG_CURRENT_DESKTOP = GNOME
+# 'override' directive
+GNUMAKEFLAGS := 
+# environment
+LOGNAME = racket
+# makefile (from 'config.mk', line 10)
+X11INC = /usr/X11R6/include
+# makefile (from 'config.mk', line 28)
+CPPFLAGS = -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS}
+# environment
+GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
+# makefile
+.DEFAULT_GOAL := all
+# environment
+SYSTEMD_EXEC_PID = 1665
+# environment
+HISTCONTROL = ignoredups
+# environment
+EDITOR = /usr/bin/nano
+# environment
+DISPLAY = :0
+# environment
+USER = racket
+# default
+MAKE_VERSION := 4.3
+# makefile (from 'config.mk', line 31)
+LDFLAGS = ${LIBS}
+# environment
+MANAGERPID = 1507
+# environment
+which_declare = declare -f
+# environment
+DEBUGINFOD_URLS = https://debuginfod.fedoraproject.org/ 
+# environment
+GIO_LAUNCHED_DESKTOP_FILE_PID = 5531
+# environment
+_ = /usr/bin/make
+# environment
+XDG_RUNTIME_DIR = /run/user/1000
+# makefile (from 'config.mk', line 30)
+CFLAGS = -pedantic -Wall -Wno-deprecated-declarations ${INCS} ${CPPFLAGS}
+# environment
+JOURNAL_STREAM = 8:31263
+# environment
+XDG_SESSION_CLASS = user
+# environment
+VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
+# environment
+HOME = /home/racket
+# environment
+QT_IM_MODULE = ibus
+# makefile (from 'config.mk', line 8)
+MANPREFIX = ${PREFIX}/share/man
+# environment
+ELECTRON_RUN_AS_NODE = 1
+# environment
+VSCODE_IPC_HOOK = /run/user/1000/vscode-48f6b613-1.67.2-main.sock
+# default
+.RECIPEPREFIX := 
+# automatic
+<F = $(notdir $<)
+# default
+SUFFIXES := 
+# makefile (from 'config.mk', line 11)
+X11LIB = /usr/X11R6/lib
+# default
+.FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell nocomment grouped-target extra-prereqs archives jobserver output-sync check-symlink guile load
+# makefile (from 'config.mk', line 38)
+CC = cc
+# environment
+XDG_MENU_PREFIX = gnome-
+# makefile (from 'config.mk', line 14)
+XINERAMALIBS = -lXinerama
+# environment
+GDMSESSION = gnome
+# variable set hash-table stats:
+# Load=119/1024=12%, Rehash=0, Collisions=15/171=9%
+
+# Pattern-specific Variable Values
+
+# No pattern-specific variable values.
+
+# Directories
+
+# . (device 41, inode 953287): 21 files, no impossibilities.
+
+# 21 files, no impossibilities in 1 directories.
+
+# Implicit Rules
+
+# No implicit rules.
+
+# Files
+
+dist: clean
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 32):
+	mkdir -p dwm-${VERSION}
+	cp -R LICENSE Makefile README config.def.h config.mk\
+		dwm.1 drw.h util.h ${SRC} dwm.png transient.c dwm-${VERSION}
+	tar -cf dwm-${VERSION}.tar dwm-${VERSION}
+ 
+	gzip dwm-${VERSION}.tar
+	rm -rf dwm-${VERSION}
+
+.c.o:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 18):
+	${CC} -c ${CFLAGS} $<
+
+dwm: drw.o dwm.o util.o
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 26):
+	${CC} -o $@ ${OBJ} ${LDFLAGS}
+
+# Not a target:
+Makefile:
+#  Implicit rule search has been done.
+#  Last modified 2022-01-07 03:42:18
+#  File has been updated.
+#  Successfully updated.
+
+dwm.o: config.h config.mk
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+util.o: config.h config.mk
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+uninstall:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 48):
+	rm -f ${DESTDIR}${PREFIX}/bin/dwm\
+		${DESTDIR}${MANPREFIX}/man1/dwm.1
+
+clean:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 29):
+	rm -f dwm ${OBJ} dwm-${VERSION}.tar.gz
+
+# Not a target:
+.DEFAULT:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+drw.o: config.h config.mk
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+all: options dwm
+#  Phony target (prerequisite of .PHONY).
+#  Command line target.
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has been updated.
+#  Needs to be updated (-q is set).
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/16=0%
+
+# Not a target:
+config.mk:
+#  Implicit rule search has been done.
+#  Last modified 2022-06-29 16:59:11.693233678
+#  File has been updated.
+#  Successfully updated.
+
+config.h:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 23):
+	cp config.def.h $@
+
+install: all
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 40):
+	mkdir -p ${DESTDIR}${PREFIX}/bin
+	cp -f dwm ${DESTDIR}${PREFIX}/bin
+	chmod 755 ${DESTDIR}${PREFIX}/bin/dwm
+	mkdir -p ${DESTDIR}${MANPREFIX}/man1
+	sed "s/VERSION/${VERSION}/g" < dwm.1 > ${DESTDIR}${MANPREFIX}/man1/dwm.1
+	chmod 644 ${DESTDIR}${MANPREFIX}/man1/dwm.1
+
+# Not a target:
+.SUFFIXES:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+.PHONY: all options clean dist install uninstall
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+options:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  Implicit/static pattern stem: ''
+#  File does not exist.
+#  File has been updated.
+#  Needs to be updated (-q is set).
+# automatic
+# @ := options
+# automatic
+# * := 
+# automatic
+# < := 
+# automatic
+# + := 
+# automatic
+# % := 
+# automatic
+# ^ := 
+# automatic
+# ? := 
+# automatic
+# | := 
+# variable set hash-table stats:
+# Load=8/32=25%, Rehash=0, Collisions=11/24=46%
+#  recipe to execute (from 'Makefile', line 12):
+	@echo dwm build options:
+	@echo "CFLAGS   = ${CFLAGS}"
+	@echo "LDFLAGS  = ${LDFLAGS}"
+	@echo "CC       = ${CC}"
+
+# files hash-table stats:
+# Load=17/1024=2%, Rehash=0, Collisions=0/48=0%
+# VPATH Search Paths
+
+# No 'vpath' search paths.
+
+# No general ('VPATH' variable) search path.
+
+# strcache buffers: 1 (0) / strings = 33 / storage = 254 B / avg = 7 B
+# current buf: size = 8162 B / used = 254 B / count = 33 / avg = 7 B
+
+# strcache performance: lookups = 74 / hit rate = 55%
+# hash-table stats:
+# Load=33/8192=0%, Rehash=0, Collisions=0/74=0%
+# Finished Make data base on Sun Jul 17 12:25:57 2022
+
+ 

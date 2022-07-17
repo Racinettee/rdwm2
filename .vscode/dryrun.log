@@ -1,0 +1,13 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/racket/Projects/dwm-6.3'
+echo dwm build options:
+echo "CFLAGS   = -pedantic -Wall -Wno-deprecated-declarations -I/usr/X11R6/include -I/usr/include/freetype2 -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -DVERSION=\"6.3\" -DXINERAMA"
+echo "LDFLAGS  = -L/usr/X11R6/lib -lX11 -lXinerama -lfontconfig -lXft"
+echo "CC       = cc"
+cp config.def.h config.h
+cc -c -pedantic -Wall -Wno-deprecated-declarations -I/usr/X11R6/include -I/usr/include/freetype2 -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -DVERSION=\"6.3\" -DXINERAMA drw.c
+cc -c -pedantic -Wall -Wno-deprecated-declarations -I/usr/X11R6/include -I/usr/include/freetype2 -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -DVERSION=\"6.3\" -DXINERAMA dwm.c
+cc -c -pedantic -Wall -Wno-deprecated-declarations -I/usr/X11R6/include -I/usr/include/freetype2 -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -DVERSION=\"6.3\" -DXINERAMA util.c
+cc -o dwm drw.o dwm.o util.o -L/usr/X11R6/lib -lX11 -lXinerama -lfontconfig -lXft
+make: Leaving directory '/home/racket/Projects/dwm-6.3'
+ 
