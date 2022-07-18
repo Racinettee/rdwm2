@@ -1,20 +1,66 @@
 use std::{slice};
 
-use x11::{xlib::{XSetForeground, XDrawRectangle, Display, Window, Drawable, GC, Cursor, XFillRectangle}, xft::{XftFont, FcPattern, XftColor}};
+use x11::{xlib::{XSetForeground, XDrawRectangle, Display, Window, Drawable, GC, Cursor, XFillRectangle, XCreateFontCursor, XFreeCursor}, xft::{XftFont, FcPattern, XftColor, XftTextExtentsUtf8}, xrender::XGlyphInfo};
 
 #[repr(C)]
-struct Cur {
+pub struct Cur {
 	cursor: Cursor,
 }
 
 #[repr(C)]
-struct Fnt {
+pub struct Fnt {
 	dpy: *mut Display,
 	h: u32,
 	xfont: *mut XftFont,
     pattern: *mut FcPattern,
     next: *mut Fnt,
 }
+
+impl Fnt {
+    fn get_extents(&self, text: &str) -> Option<(u32, u32)> {
+        let mut ext = XGlyphInfo{
+            width: 0, height: 0, x: 0, y: 0, xOff: 0, yOff: 0,
+        };
+
+        if text.len() == 0 {
+            return None
+        }
+    
+        unsafe {
+            XftTextExtentsUtf8(
+            self.dpy,
+            self.xfont,
+            text.as_ptr(),
+            text.len() as i32,
+            &mut ext as *mut XGlyphInfo);
+        }
+        Some((ext.xOff as u32, self.h as u32))
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn drw_font_getexts(font: *mut Fnt, text: *const i8, len: u32, w: *mut u32, h: *mut u32)
+{
+    let fnt = unsafe { & *font };
+    let text = unsafe {
+        let text = std::slice::from_raw_parts(text, len as usize);
+        match std::str::from_utf8(std::mem::transmute(text)) {
+            Ok(text) => text,
+            _ => return
+        }
+    };
+    if let Some((ww, hh)) = fnt.get_extents(text) {
+        unsafe {
+            if w != std::ptr::null_mut() {
+                *w = ww;
+            }
+            if h != std::ptr::null_mut() {
+                *h = hh;
+            }
+        }
+    }
+}
+
 
 type Clr = XftColor;
 #[repr(C)]
@@ -51,11 +97,32 @@ impl Drw {
 #[no_mangle]
 unsafe extern "C" fn drw_rect(drw: *mut Drw, x: i32, y: i32, w: u32, h: u32, filled: i32, invert: i32)
 {
-    println!("draw rect");
 	if drw == std::ptr::null_mut() || (*drw).scheme == std::ptr::null_mut() {
 		return;
     }
     let drw = &mut *drw;
     drw.rect(x, y, w, h, filled != 0, invert != 0);
-    println!("finish rect");
+}
+
+#[no_mangle]
+pub extern "C" fn drw_cur_create(drw: *mut Drw, shape: i32) -> *mut Cur {
+	if drw == std::ptr::null_mut() {
+        return std::ptr::null_mut()
+    }
+    let mut cur: Box<Cur> = Box::new(Cur{cursor: Default::default()});
+    cur.cursor = unsafe { XCreateFontCursor((*drw).dpy, shape as u32) };
+    Box::into_raw(cur)
+}
+
+#[no_mangle]
+pub extern "C" fn drw_cur_free(drw: *mut Drw, cursor: *mut Cur)
+{
+	if cursor == std::ptr::null_mut() {
+		return
+    }
+
+	unsafe {
+        XFreeCursor((*drw).dpy, (*cursor).cursor);
+        Box::from_raw(cursor);
+    }
 }
