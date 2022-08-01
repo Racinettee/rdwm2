@@ -11,3 +11,4 @@ crate-type = ["staticlib"]
 [dependencies]
 x11 = { version = "2.19.1", features = ["xlib", "xft", "xinerama"] }
 libc = "0.2.126"
+yeslogic-fontconfig-sys = "3.2.0"
