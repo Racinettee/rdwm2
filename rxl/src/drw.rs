@@ -8,8 +8,9 @@ use x11::{
 use fontconfig_sys::{FcBool, FcChar8, FcCharSetAddChar, FcCharSetCreate, FcCharSetDestroy, FcConfigSubstitute, FcDefaultSubstitute, FcMatchPattern, FcNameParse, FcPatternAddBool, FcPatternAddCharSet, FcPatternDestroy, FcPatternDuplicate, FcPatternGetBool, FcResultMatch, FcTypeBool};
 
 use fontconfig_sys::constants::{FC_CHARSET, FC_COLOR, FC_SCALABLE};
-use x11::xft::{XftFontClose, XftFontOpenName, XftFontOpenPattern};
-use x11::xlib::{CapButt, JoinMiter, LineSolid, XCreateGC, XCreatePixmap, XDefaultDepth, XFreeGC, XFreePixmap, XSetLineAttributes};
+use x11::xft::{XftColorAllocName, XftFontClose, XftFontOpenName, XftFontOpenPattern};
+use x11::xlib::{CapButt, False, JoinMiter, LineSolid, XCopyArea, XCreateGC, XCreatePixmap, XDefaultDepth, XFreeGC, XFreePixmap, XSetLineAttributes, XSync};
+use x11::xrender::XRenderColor;
 
 const ColFg: i32 = 0;
 const ColBg: i32 = 1;
@@ -237,6 +238,23 @@ const COL_BG: usize = 1;
 const COL_BORDER: usize = 2;
 
 impl Drw {
+	fn create(dpy: *mut Display, screen: i32, root: Window, w: u32, h: u32) -> Box<Drw> {
+		unsafe {
+			let mut drw = Box::new(Drw {
+				dpy,
+				screen,
+				root,
+				w,
+				h,
+				drawable: XCreatePixmap(dpy, root, w, h, XDefaultDepth(dpy, screen) as u32),
+				gc: XCreateGC(dpy, root, 0, std::ptr::null_mut()),
+				fonts: std::ptr::null_mut(),
+				scheme: std::ptr::null_mut(),
+			});
+			XSetLineAttributes(dpy, drw.gc, 1, LineSolid, CapButt, JoinMiter);
+			drw
+		}
+	}
     fn rect(&self, x: i32, y: i32, w: u32, h: u32, filled: bool, invert: bool) {
         unsafe {
             let colscheme = slice::from_raw_parts(self.scheme, 3);
@@ -251,29 +269,26 @@ impl Drw {
     }
 }
 
-#[no_mangle]
-unsafe fn drw_create(dpy: *mut Display, screen: i32, root: Window, w: u32, h: u32) -> *mut Drw {
-	let mut drw = Box::new(Drw{
-		dpy,
-		screen,
-		root,
-		w, h,
-		drawable: XCreatePixmap(dpy, root, w, h, XDefaultDepth(dpy, screen) as u32),
-		gc: XCreateGC(dpy, root, 0, std::ptr::null_mut()),
-		fonts: std::ptr::null_mut(),
-		scheme: std::ptr::null_mut(),
-	});
-	XSetLineAttributes(dpy, drw.gc, 1, LineSolid, CapButt, JoinMiter);
+impl Drop for Drw {
+	fn drop(&mut self) {
+		unsafe {
+			XFreePixmap(self.dpy, self.drawable);
+			XFreeGC(self.dpy, self.gc);
+			drw_fontset_free(self.fonts);
+		}
+	}
+}
 
+#[no_mangle]
+fn drw_create(dpy: *mut Display, screen: i32, root: Window, w: u32, h: u32) -> *mut Drw {
+	let drw = Drw::create(dpy, screen, root, w, h);
 	Box::into_raw(drw)
 }
 
 #[no_mangle]
 unsafe fn drw_free(drw: *mut Drw) {
 	let drw = Box::from_raw(drw);
-	XFreePixmap(drw.dpy, drw.drawable);
-	XFreeGC(drw.dpy, drw.gc);
-	drw_fontset_free(drw.fonts);
+	drop(drw);
 }
 
 #[no_mangle]
@@ -290,8 +305,7 @@ unsafe fn drw_resize(drw: *mut Drw, w: u32, h: u32) {
 }
 
 #[no_mangle]
-unsafe fn drw_rect(drw: *mut Drw, x: i32, y: i32, w: u32, h: u32, filled: i32, invert: i32)
-{
+unsafe fn drw_rect(drw: *mut Drw, x: i32, y: i32, w: u32, h: u32, filled: i32, invert: i32) {
 	if drw == std::ptr::null_mut() || (*drw).scheme == std::ptr::null_mut() {
 		return;
     }
@@ -310,20 +324,18 @@ pub fn drw_cur_create(drw: *mut Drw, shape: i32) -> *mut Cur {
 }
 
 #[no_mangle]
-pub fn drw_cur_free(drw: *mut Drw, cursor: *mut Cur)
-{
+pub fn drw_cur_free(drw: *mut Drw, cursor: *mut Cur) {
 	if cursor == std::ptr::null_mut() {
 		return
     }
-
 	unsafe {
         XFreeCursor((*drw).dpy, (*cursor).cursor);
         Box::from_raw(cursor);
     }
 }
+
 #[no_mangle]
-unsafe extern "C" fn xfont_create(drw: *mut Drw, fontname: *const i8, fontpattern: *mut FcPattern) -> *mut Fnt
-{
+unsafe fn xfont_create(drw: *mut Drw, fontname: *const i8, fontpattern: *mut FcPattern) -> *mut Fnt {
 	let mut xfont = std::ptr::null_mut();
 	let mut pattern = std::ptr::null_mut();
 	if !fontname.is_null() {
@@ -376,8 +388,9 @@ unsafe extern "C" fn xfont_create(drw: *mut Drw, fontname: *const i8, fontpatter
 
 	return Box::into_raw(font);
 }
+
 #[no_mangle]
-unsafe extern "C" fn xfont_free(font: *mut Fnt) {
+unsafe fn xfont_free(font: *mut Fnt) {
 	if font.is_null() {
 		return;
 	}
@@ -389,7 +402,7 @@ unsafe extern "C" fn xfont_free(font: *mut Fnt) {
 }
 
 #[no_mangle]
-unsafe extern "C" fn drw_fontset_create(drw: *mut Drw, font: *mut *const i8, fontcount: usize) -> *mut Fnt {
+unsafe fn drw_fontset_create(drw: *mut Drw, font: *mut *const i8, fontcount: usize) -> *mut Fnt {
 	if drw.is_null() || font.is_null() {
 		return std::ptr::null_mut();
 	}
@@ -412,4 +425,53 @@ unsafe fn drw_fontset_free(font: *mut Fnt) {
 		drw_fontset_free((*font).next);
 		xfont_free(font);
 	}
+}
+
+#[no_mangle]
+fn drw_setscheme(drw: *mut Drw, scm: *mut Clr) {
+	if !drw.is_null() {
+		unsafe { (*drw).scheme = scm };
+	}
+}
+
+#[no_mangle]
+unsafe fn drw_map(drw: *mut Drw, win: Window, x: i32, y: i32, w: u32, h: u32)
+{
+	if drw.is_null() {
+		return;
+	}
+	XCopyArea((*drw).dpy, (*drw).drawable, win, (*drw).gc, x, y, w, h, x, y);
+	XSync((*drw).dpy, False);
+}
+
+unsafe fn drw_clr_create(drw: *mut Drw, dest: *mut Clr, clrname: *const i8) {
+	if drw.is_null() || dest.is_null() || clrname.is_null() {
+		return;
+	}
+	if XftColorAllocName((*drw).dpy, XDefaultVisual((*drw).dpy, (*drw).screen),
+	XDefaultColormap((*drw).dpy, (*drw).screen),
+	clrname, dest) == 0 {
+		panic!("error, cannot allocate color '{:?}'", clrname);
+	}
+}
+
+/* Wrapper to create color schemes. The caller has to call free(3) on the
+ * returned color scheme when done using it. */
+#[no_mangle]
+unsafe fn drw_scm_create(drw: *mut Drw, clrnames: *mut *const i8, clrcount: usize) -> *mut Clr
+{
+	if drw.is_null() || clrnames.is_null() || clrcount < 2 {
+		return std::ptr::null_mut();
+	}
+	/* need at least two colors for a scheme */
+	let clrnames = slice::from_raw_parts(clrnames, clrcount);
+	let mut ret: Vec<Clr> = Vec::new();
+	ret.resize(clrcount, Clr{ pixel: 0, color: XRenderColor{ red: 0, green: 0, blue: 0, alpha: 0 } });
+
+	for (i, clrname) in clrnames.iter().enumerate() {
+		drw_clr_create(drw, &mut ret[i], *clrname);
+	}
+	let res_ptr = ret.as_mut_ptr();
+	std::mem::forget(ret);
+	res_ptr
 }

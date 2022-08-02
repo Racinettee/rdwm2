@@ -60,60 +60,11 @@ utf8decode(const char *c, long *u, size_t clen)
 	return len;
 }
 
-extern Drw *drw_create(Display *dpy, int screen, Window root, unsigned int w, unsigned int h);
-extern void drw_free(Drw *drw);
-extern void drw_resize(Drw *drw, unsigned int w, unsigned int h);
-
-
 /* This function is an implementation detail. Library users should use
  * drw_fontset_create instead.
  */
 extern Fnt* xfont_create(Drw *drw, const char *fontname, FcPattern *fontpattern);
 extern void xfont_free(Fnt *font);
-extern Fnt* drw_fontset_create(Drw* drw, const char *fonts[], size_t fontcount);
-
-void
-drw_clr_create(Drw *drw, Clr *dest, const char *clrname)
-{
-	if (!drw || !dest || !clrname)
-		return;
-
-	if (!XftColorAllocName(drw->dpy, DefaultVisual(drw->dpy, drw->screen),
-	                       DefaultColormap(drw->dpy, drw->screen),
-	                       clrname, dest))
-		die("error, cannot allocate color '%s'", clrname);
-}
-
-/* Wrapper to create color schemes. The caller has to call free(3) on the
- * returned color scheme when done using it. */
-Clr *
-drw_scm_create(Drw *drw, const char *clrnames[], size_t clrcount)
-{
-	size_t i;
-	Clr *ret;
-
-	/* need at least two colors for a scheme */
-	if (!drw || !clrnames || clrcount < 2 || !(ret = ecalloc(clrcount, sizeof(XftColor))))
-		return NULL;
-
-	for (i = 0; i < clrcount; i++)
-		drw_clr_create(drw, &ret[i], clrnames[i]);
-	return ret;
-}
-
-void
-drw_setfontset(Drw *drw, Fnt *set)
-{
-	if (drw)
-		drw->fonts = set;
-}
-
-void
-drw_setscheme(Drw *drw, Clr *scm)
-{
-	if (drw)
-		drw->scheme = scm;
-}
 
 int
 drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char *text, int invert)
@@ -244,16 +195,6 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 		XftDrawDestroy(d);
 
 	return x + (render ? w : 0);
-}
-
-void
-drw_map(Drw *drw, Window win, int x, int y, unsigned int w, unsigned int h)
-{
-	if (!drw)
-		return;
-
-	XCopyArea(drw->dpy, drw->drawable, win, drw->gc, x, y, w, h, x, y);
-	XSync(drw->dpy, False);
 }
 
 unsigned int
