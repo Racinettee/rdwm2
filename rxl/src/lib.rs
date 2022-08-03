@@ -3,6 +3,7 @@ use x11::xlib::{Display, XErrorEvent, BadWindow, BadMatch, BadDrawable, BadAcces
 
 mod xconst;
 mod drw;
+mod dwm;
 
 pub use drw::*;
 

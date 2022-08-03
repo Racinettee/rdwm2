@@ -5,7 +5,7 @@ use x11::{
 	xft::{XftFont, FcPattern, XftColor, XftTextExtentsUtf8, XftDraw, XftDrawCreate, XftCharExists, XftDrawDestroy, XftFontMatch, XftDrawStringUtf8, FcResult},
 	xrender::XGlyphInfo
 };
-use fontconfig_sys::{FcBool, FcChar8, FcCharSetAddChar, FcCharSetCreate, FcCharSetDestroy, FcConfigSubstitute, FcDefaultSubstitute, FcMatchPattern, FcNameParse, FcPatternAddBool, FcPatternAddCharSet, FcPatternDestroy, FcPatternDuplicate, FcPatternGetBool, FcResultMatch, FcTypeBool};
+use fontconfig_sys::{FcBool, FcChar32, FcChar8, FcCharSet, FcCharSetAddChar, FcCharSetCreate, FcCharSetDestroy, FcConfigSubstitute, FcDefaultSubstitute, FcMatchPattern, FcNameParse, FcPatternAddBool, FcPatternAddCharSet, FcPatternDestroy, FcPatternDuplicate, FcPatternGetBool, FcResultMatch, FcTypeBool};
 
 use fontconfig_sys::constants::{FC_CHARSET, FC_COLOR, FC_SCALABLE};
 use x11::xft::{XftColorAllocName, XftFontClose, XftFontOpenName, XftFontOpenPattern};
@@ -76,135 +76,210 @@ pub extern "C" fn drw_font_getexts(font: *mut Fnt, text: *const i8, len: u32, w:
 }
 
 #[no_mangle]
-unsafe extern "C" fn __drw_fontset_getwidth(drw: *mut Drw, text: *const i8) -> u32 {
+unsafe extern "C" fn drw_fontset_getwidth(drw: *mut Drw, text: *const i8) -> u32 {
 	if drw == std::ptr::null_mut() || (*drw).fonts == std::ptr::null_mut() || text == std::ptr::null() {
 		return 0;
     }
-	return _drw_text(drw, 0, 0, 0, 0, 0, text, 0) as u32;
+	return drw_text(drw, 0, 0, 0, 0, 0, text, 0) as u32;
+}
+
+const UTF_INVALID: i32 = 0xFFFD;
+const UTF_SIZ: usize   = 4;
+
+const utfbyte: [u8; UTF_SIZ + 1] = [0x80,  0, 0xC0, 0xE0, 0xF0];
+const utfmask: [u8; UTF_SIZ + 1] = [0xC0, 0x80, 0xE0, 0xF0, 0xF8];
+const utfmin: [i32; UTF_SIZ + 1] = [   0,    0,  0x80,  0x800,  0x10000];
+const utfmax: [i32; UTF_SIZ + 1] = [0x10FFFF, 0x7F, 0x7FF, 0xFFFF, 0x10FFFF];
+
+unsafe fn utf8decodebyte(c: i8, i: *mut usize) -> i32 {
+	(*i) = 0;
+	while *i < (UTF_SIZ + 1) {
+		if (c as u8 & utfmask[*i]) == utfbyte[*i] {
+			return (c as u8 & !utfmask[*i]) as i32;
+		}
+		(*i) += 1;
+	}
+	return 0;
+}
+
+fn between<T: PartialOrd>(X: T, A: T, B: T) -> bool {
+	(A) <= (X) && (X) <= (B)
+}
+
+unsafe fn utf8validate(u: *mut i32, mut i: usize) -> usize {
+	if !between(*u, utfmin[i], utfmax[i]) || between(*u, 0xD800, 0xDFFF) {
+		*u = UTF_INVALID;
+	}
+	i = 1;
+	while *u > utfmax[i] {
+		i += 1;
+	}
+	return i;
+}
+
+unsafe fn utf8decode(c: *const i8, u: *mut i32, clen: usize) -> usize {
+	let mut i: usize = 0;
+	let mut j: usize = 0;
+	let mut len: usize = 0;
+	let mut typ: usize = 0;
+	let mut udecoded: i32 = 0;
+
+	*u = UTF_INVALID;
+	if clen == 0 {
+		return 0;
+	}
+	udecoded = utf8decodebyte(*c.offset(0), &mut len);
+	if !between(len, 1, UTF_SIZ) {
+		return 1;
+	}
+	i = 1;
+	j = 1;
+	while i < clen && j < len {
+		udecoded = (udecoded << 6) | utf8decodebyte(*c.offset(i as isize), &mut typ);
+		if typ != 0 {
+			return j;
+		}
+		i += 1;
+		j += 1;
+	}
+	if j < len {
+		return 0;
+	}
+	*u = udecoded;
+	utf8validate(u, len);
+	return len;
 }
 
 #[no_mangle]
-unsafe extern "C" fn _drw_text(drw: *mut Drw, mut x: i32, y: i32, mut w: u32, h: u32, lpad: u32, text: *const i8, invert: i32) -> i32 {
-	let mut buf = [0; 1024];
-    let render = x != 0 || y != 0 || w != 0 || h != 0;
-    let mut d: *mut XftDraw = std::ptr::null_mut();
-    let mut utf8codepoint = 0;
-    let mut charexists = 0;
-	let mut ty;
+unsafe fn drw_text(drw: *mut Drw, mut x: i32, mut y: i32, mut w: u32, mut h: u32, lpad: u32, mut text: *const i8, invert: i32) -> i32 {
+	let mut buf = [0i8; 1024];
+	let mut ty = 0;
 	let mut ew = 0u32;
-	//Fnt *usedfont, *curfont, *nextfont;
-	//size_t i, len;
-	//const char *utf8str;
-	//FcPattern *match;
-	//XftResult result;
+	let mut d: *mut XftDraw = std::ptr::null_mut();
+	let mut usedfont: *mut Fnt = std::ptr::null_mut();
+	let mut curfont: *mut Fnt = std::ptr::null_mut();
+	let mut nextfont: *mut Fnt = std::ptr::null_mut();
+	let mut i = 0usize;
+	let mut len = 0usize;
+	let mut utf8strlen = 0;
+	let mut utf8charlen = 0;
+	let render = x != 0 || y != 0 || w != 0 || h != 0;
+	let mut utf8codepoint = 0;
+	let mut utf8str: *const i8 = std::ptr::null_mut();
+	let mut fccharset = std::ptr::null_mut();
+	let mut fcpattern = std::ptr::null_mut();
+	let mut matc = std::ptr::null_mut();
+	let mut result = FcResult::NoId;
+	let mut charexists = false;
 
-	if drw == std::ptr::null_mut() || (render && (*drw).scheme == std::ptr::null_mut()) ||
-        text == std::ptr::null() || (*drw).fonts == std::ptr::null_mut() {
-        return 0;
-    }
-
+	if drw.is_null() || (render && (*drw).scheme.is_null()) || text.is_null() || (*drw).fonts.is_null() {
+		return 0;
+	}
 	if !render {
 		w = !w;
 	} else {
-        let colscheme = if invert != 0 { COL_FG } else { COL_BG };
-		XSetForeground((*drw).dpy, (*drw).gc, (*(*drw).scheme.offset(colscheme.try_into().unwrap())).pixel);
+		XSetForeground((*drw).dpy, (*drw).gc, (*(*drw).scheme.offset(if invert != 0 { ColFg } else { ColBg } as isize)).pixel);
 		XFillRectangle((*drw).dpy, (*drw).drawable, (*drw).gc, x, y, w, h);
 		d = XftDrawCreate((*drw).dpy, (*drw).drawable,
-		                  XDefaultVisual((*drw).dpy, (*drw).screen),
-		                  XDefaultColormap((*drw).dpy, (*drw).screen));
+		XDefaultVisual((*drw).dpy, (*drw).screen),
+		XDefaultColormap((*drw).dpy, (*drw).screen));
 		x += lpad as i32;
 		w -= lpad;
 	}
-    let mut usedfont = (*drw).fonts;
-	let mut curfont = std::ptr::null_mut();
-	let utf8str = text;
-	let utf8str = slice::from_raw_parts(utf8str, 256);
-	let utf8str = std::str::from_utf8_unchecked(std::mem::transmute(utf8str));
+	usedfont = (*drw).fonts;
 	loop {
-
-		let mut nextfont = std::ptr::null_mut();
-		for ch in utf8str.chars() {
-			utf8codepoint = ch as u32;
+		utf8strlen = 0;
+		utf8str = text;
+		nextfont = std::ptr::null_mut();
+		while (*text) != 0 {
+			utf8charlen = utf8decode(text, &mut utf8codepoint, UTF_SIZ);
 			curfont = (*drw).fonts;
-			while curfont != std::ptr::null_mut() {
-				charexists = (charexists != 0 || XftCharExists((*drw).dpy, (*curfont).xfont, utf8codepoint) != 0) as i32;
-				// If the character exists in one of the fonts we're using we reak out of this loop
-				if charexists != 0 {
-					if curfont != usedfont {
+			while !curfont.is_null() {
+				charexists = charexists || XftCharExists((*drw).dpy, (*curfont).xfont, utf8codepoint as u32) != 0;
+				if charexists {
+					if curfont == usedfont {
+						utf8strlen += utf8charlen;
+						text = text.add(utf8charlen);
+					} else {
 						nextfont = curfont;
 					}
 					break;
 				}
-				curfont = (*curfont).next;
+				curfont = (*curfont).next
 			}
 
-			if charexists == 0 || nextfont != std::ptr::null_mut() {
+			if !charexists || !nextfont.is_null() {
 				break;
 			} else {
-				charexists = 0;
+				charexists = false;
 			}
 		}
 
-		if utf8str.len() != 0 {
-			drw_font_getexts(usedfont, utf8str.as_ptr() as *const i8, utf8str.len() as u32, &mut ew as *mut u32, std::ptr::null_mut());
+		if utf8strlen != 0 {
+			drw_font_getexts(usedfont, utf8str, utf8strlen as u32, &mut ew, std::ptr::null_mut());
 			/* shorten text if necessary */
-			let mut len = utf8str.len().min(buf.len());
+			len = utf8strlen.min(buf.len() - 1);
 			while len != 0 && ew > w {
-				drw_font_getexts(usedfont, utf8str.as_ptr() as *const i8, len as u32, &mut ew, std::ptr::null_mut());
+				drw_font_getexts(usedfont, utf8str, len as u32, &mut ew, std::ptr::null_mut());
 				len -= 1;
 			}
+
 			if len != 0 {
-				for (dst, src) in buf.iter_mut().zip(utf8str.as_bytes()) { *dst = *src; }
-				buf[len] = '\0' as u8;
-				if len < utf8str.len() {
-					buf[len-3..len].fill('.' as u8);
+				for ind in 0..len { buf[ind] = *utf8str.offset(ind as isize); }
+				buf[len] = '\0' as i8;
+				if len < utf8strlen {
+					i = len;
+					while i != 0 && i > len - 3 {
+						i -= 1;
+						buf[i] = '.' as i8;
+					}
 				}
 				if render {
-					ty = y + (h as i32 - (*usedfont).h as i32) / 2 + (*(*usedfont).xfont).ascent;
-					XftDrawStringUtf8(d, (*drw).scheme.offset(if invert != 0 {ColBg}else{ColFg} as isize),
-									  (*usedfont).xfont, x, ty, buf.as_ptr(), len as i32);
+					ty = y + (h - (*usedfont).h) as i32 / 2 + (*(*usedfont).xfont).ascent;
+					XftDrawStringUtf8(d, (*drw).scheme.offset(if invert != 0 { ColBg } else { ColFg } as isize),
+					  (*usedfont).xfont, x, ty, buf.as_ptr() as *const u8, len as i32);
 				}
 				x += ew as i32;
 				w -= ew;
 			}
 		}
-
-		if *utf8str.as_ptr().offset((utf8str.len()-1) as isize) == 0 {
+		if (*text) == 0 {
 			break;
-		} else if nextfont != std::ptr::null_mut() {
-			charexists = 0;
+		} else if !nextfont.is_null() {
+			charexists = false;
 			usedfont = nextfont;
 		} else {
 			/* Regardless of whether or not a fallback font is found, the
 			 * character must be drawn. */
-			charexists = 1;
+			charexists = true;
 
-			let fccharset = FcCharSetCreate();
-			FcCharSetAddChar(fccharset, utf8codepoint);
+			fccharset = FcCharSetCreate();
+			FcCharSetAddChar(fccharset, utf8codepoint as FcChar32);
 
-			if (*(*drw).fonts).pattern == std::ptr::null_mut() {
+			if (*(*drw).fonts).pattern.is_null() {
 				/* Refer to the comment in xfont_create for more information. */
 				panic!("the first font in the cache must be loaded from a font string.");
 			}
 
-			let fcpattern = FcPatternDuplicate((*(*drw).fonts).pattern as *const fontconfig_sys::FcPattern);
+			fcpattern = FcPatternDuplicate((*(*drw).fonts).pattern as *const fontconfig_sys::FcPattern);
 			FcPatternAddCharSet(fcpattern, FC_CHARSET.as_ptr(), fccharset);
 			FcPatternAddBool(fcpattern, FC_SCALABLE.as_ptr(), 1);
 			FcPatternAddBool(fcpattern, FC_COLOR.as_ptr(), 0);
 
 			FcConfigSubstitute(std::ptr::null_mut(), fcpattern, FcMatchPattern);
 			FcDefaultSubstitute(fcpattern);
-			let result: *mut FcResult = std::ptr::null_mut();
-			let mtch = XftFontMatch((*drw).dpy, (*drw).screen, fcpattern as *const FcPattern, result);
+			matc = XftFontMatch((*drw).dpy, (*drw).screen, fcpattern as *const FcPattern, &mut result);
 
 			FcCharSetDestroy(fccharset);
 			FcPatternDestroy(fcpattern);
 
-			if !mtch.is_null() {
-				usedfont = xfont_create(drw, std::ptr::null_mut(), mtch);
-				if !usedfont.is_null() && XftCharExists((*drw).dpy, (*usedfont).xfont, utf8codepoint) != 0 {
+			if !matc.is_null() {
+				usedfont = xfont_create(drw, std::ptr::null_mut(), matc);
+				if !usedfont.is_null() && XftCharExists((*drw).dpy, (*usedfont).xfont, utf8codepoint as u32) != 0 {
 					curfont = (*drw).fonts;
-					while !(*curfont).next.is_null() { curfont = (*curfont).next; }
+					while !(*curfont).next.is_null() {
+						curfont = (*curfont).next;
+					}
 					(*curfont).next = usedfont;
 				} else {
 					xfont_free(usedfont);
@@ -216,7 +291,8 @@ unsafe extern "C" fn _drw_text(drw: *mut Drw, mut x: i32, y: i32, mut w: u32, h:
 	if !d.is_null() {
 		XftDrawDestroy(d);
 	}
-	return x + if render { w as i32 } else { 0 };
+
+	return x + (if render { w as i32 } else { 0 });
 }
 
 
